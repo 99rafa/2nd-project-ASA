@@ -4,26 +4,43 @@
 #include <algorithm>
 using namespace std;
 
+
+class Vertex
+{
+    int overflow, height;
+};
+
+class Edge
+{
+    int capacity, current_flow;
+    int origin, destination;
+};
+
 class Network
 {
-    int numStations;
-    list<int> *adjLists;
+    int num_stations, num_suppliers;
+    list<Vertex> vertex_list;
+    list<Edge> edge_list;
 
 public:
-    Network(int numStations, int numStoring);   // Network Constructor
-    void addRouterToNetwork(int router1, int router2);
+    Network(int numStations, int numStoring, int numConnections);   // Network Constructor
+    void addEdge(Edge edge);
+    void addVertex(Vertex vertex);
     void freeNetwork();
     void setConnection(int sourceV, int destinV, int capacity);
 };
 
-    Network::Network(int numStations, int numStoring)  {
-        int i;
-        this->numStations = numStations + 2;
-    	}
 
-    void Network::addRouterToNetwork(int router1, int router2) {
-            adjLists[router1].push_front(router2);
-            adjLists[router2].push_front(router1);
+    Network::Network(int numSuppliers, int numStoring, int numConnections)  {
+        int i;
+        this->num_stations = numSuppliers + numStoring + 2;
+        this->num_suppliers = numSuppliers;
+        vertex_list = new list<Vertex>[numSuppliers + numStoring + 2 + 2*numStoring];
+        edge_list = new list<Edge>[numConnections + numStoring];
+    }
+
+    void Network::addEdge(Edge edge) {
+        edge_list.push_front(edge);
     }
 
     void Network::setConnection(int sourceV, int destinV, int capacity) {}
