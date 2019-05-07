@@ -27,33 +27,36 @@ public:
         edge_list.push_front(edge);
     }
     void Network::addVertex(Vertex vertex){
-        vertex_list[vertex.getId()].push_front(vertex);
+        vertex_list[vertex.id].push_front(vertex);
     }
 };
 
-class Vertex
-{
-    int id, overflow, height;
+struct Edge 
+{ 
+    int flow, capacity; 
+    // start vertex as u and end vertex as v. 
+    int u, v; 
+  
+    Edge(int flow, int capacity, int u, int v) 
+    { 
+        this->flow = flow; 
+        this->capacity = capacity; 
+        this->u = u; 
+        this->v = v; 
+    } 
+}; 
 
-    public:
-        Vertex();
-        int getId(Vertex vertex);
-    
-    Vertex vertex (){
-        id, height = 0;
-    }
-    int getId(){
-        return id;
-    }
+// Represent a Vertex 
+struct Vertex 
+{ 
+    int height, overflow, id; 
+  
+    Vertex(int height, int overflow) 
+    { 
+        this->height = height; 
+        this->overflow = overflow; 
+    } 
 };
-
-class Edge 
-{
-    int capacity, current_flow;
-    int origin, destination;
-};
-
-
 
 int main() {
     int n_suppliers, supplier_production,
