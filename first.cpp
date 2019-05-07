@@ -6,7 +6,7 @@ using namespace std;
 
 class Network
 {
-    int numRouters
+    int num_suppliers, num_stations;
     list<int> *adjLists;
 
 public:
@@ -14,34 +14,47 @@ public:
     void addRouterToNetwork(int router1, int router2);
 };
 
-    Network::Network(int numRouters)  {
-        int i;
-        this->numRouters = numRouters;
-    	}
-
-    void Network::addRouterToNetwork(int router1, int router2) {
-            adjLists[router1].push_front(router2);
-            adjLists[router2].push_front(router1);
+Network::Network(int numRouters)  {
+    int i;
+    this->numRouters = numRouters;
     }
 
-    void Network::freeNetwork() {}
+void Network::addRouterToNetwork(int router1, int router2) {
+        adjLists[router1].push_front(router2);
+        adjLists[router2].push_front(router1);
+}
 
-    int main() {
-        int n_routers, n_edges, router_1, router_2,i;
-        if(scanf("%d",&n_routers) < 0)
-          exit(-1);
-        Network network(n_routers);
+void Network::freeNetwork() {}
 
-        if(scanf("%d",&n_edges) < 0)
-          exit(-1);
+int main() {
+    int n_routers, n_edges, router_1, router_2,i;
+    if(scanf("%d",&n_routers) < 0)
+        exit(-1);
+    Network network(n_routers);
 
-        for (i=0; i < n_edges; i++) {
-          if(scanf("%d %d", &router_1, &router_2) < 0)
-                exit(-1);
-            network.addRouterToNetwork(router_1, router_2);
-        }
+    if(scanf("%d",&n_edges) < 0)
+        exit(-1);
 
-        //free all the memory allocated to the network object
-        network.freeNetwork();
-        return 0;
+    for (i=0; i < n_edges; i++) {
+        if(scanf("%d %d", &router_1, &router_2) < 0)
+            exit(-1);
+        network.addRouterToNetwork(router_1, router_2);
     }
+
+    //free all the memory allocated to the network object
+    network.freeNetwork();
+    return 0;
+}
+
+class Vertex
+{
+    int overflow, height;
+};
+
+class Edge 
+{
+    int capacity, current_flow;
+    Vertex* origin;
+    Vertex* destination;;
+
+};
