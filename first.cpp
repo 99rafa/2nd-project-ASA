@@ -7,8 +7,19 @@ using namespace std;
 
 class Vertex
 {
-    int overflow, height;
+    int id, overflow, height;
+
+    public:
+        Vertex();
+        int getId();
 };
+    Vertex::Vertex(){
+        this->id=0;
+        this->height = 0;
+    }
+    int Vertex::getId(){
+        return this->id;
+    }
 
 class Edge
 {
@@ -18,30 +29,34 @@ class Edge
 
 class Network
 {
-    int num_stations, num_suppliers;
-    list<Vertex> vertex_list;
-    list<Edge> edge_list;
+    int num_vertex, num_suppliers;
+    list<Vertex>* vertex_list;
+    vector<Edge> edge_list;
 
 public:
     Network(int numStations, int numStoring, int numConnections);   // Network Constructor
     void addEdge(Edge edge);
     void addVertex(Vertex vertex);
-    void freeNetwork();
     void setConnection(int sourceV, int destinV, int capacity);
+    void freeNetwork();
 };
-
-
     Network::Network(int numSuppliers, int numStoring, int numConnections)  {
         int i;
-        this->num_stations = numSuppliers + numStoring + 2;
+        this->num_vertex = numSuppliers + numStoring + 2;
         this->num_suppliers = numSuppliers;
         vertex_list = new list<Vertex>[numSuppliers + numStoring + 2 + 2*numStoring];
-        edge_list = new list<Edge>[numConnections + numStoring];
     }
 
     void Network::addEdge(Edge edge) {
         edge_list.push_front(edge);
     }
+    void Network::addVertex(Vertex vertex){
+        vertex_list[vertex.getId()].push_front(vertex);
+    }
+
+
+
+
 
     void Network::setConnection(int sourceV, int destinV, int capacity) {}
 
@@ -57,7 +72,7 @@ public:
         if(scanf("%d",&n_connections) < 0)
           exit(-1);
         n_stations = n_suppliers + n_storing;
-        Network network(n_suppliers, n_storing);
+        Network network(n_suppliers, n_storing, n_connections);
 
         for (i=2; i< n_suppliers + 2; i++) {
             if(scanf("%d", &connection_capacity ) < 0)
