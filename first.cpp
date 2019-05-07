@@ -10,15 +10,15 @@ class Network
     list<int> *adjLists;
 
 public:
-    Network(int numStations);   // Network Constructor
+    Network(int numStations, int numStoring);   // Network Constructor
     void addRouterToNetwork(int router1, int router2);
     void freeNetwork();
+    void setConnection(int sourceV, int destinV, int capacity);
 };
 
     Network::Network(int numStations, int numStoring)  {
         int i;
         this->numStations = numStations + 2;
-        adjLists = new list<int>[numRouters+];
     	}
 
     void Network::addRouterToNetwork(int router1, int router2) {
@@ -26,10 +26,13 @@ public:
             adjLists[router2].push_front(router1);
     }
 
+    void Network::setConnection(int sourceV, int destinV, int capacity) {}
+
     void Network::freeNetwork() {}
 
     int main() {
-        int n_stations,n_suppliers, supplier_production, n_storing, n_connections, router_1, router_2,i;
+        int n_stations, n_suppliers, supplier_production,
+        current_id,n_storing, n_connections, connection_capacity, sourceV, destinV,i, k;
         if(scanf("%d",&n_suppliers) < 0)
           exit(-1);
         if(scanf("%d",&n_storing) < 0)
@@ -37,19 +40,25 @@ public:
         if(scanf("%d",&n_connections) < 0)
           exit(-1);
         n_stations = n_suppliers + n_storing;
-        Network network(n_stations);
+        Network network(n_suppliers, n_storing);
 
-        list<int>::iterator r;
-        i=0;
-        for (r= adjLists[i].begin() ; r != adjLists[router_id].end(); i++) {
-            if(scanf("%d", network.[0] ) < 0)
+        for (i=2; i< n_suppliers + 2; i++) {
+            if(scanf("%d", &connection_capacity ) < 0)
                   exit(-1);
-
+            network.setConnection(0,i, connection_capacity);
         }
-           if(scanf("%d %d", &router_1, &router_2) < 0)
-                 exit(-1);
-             network.addRouterToNetwork(router_1, router_2);
-         }
+        k = i;
+        for (i=k; i < k+ n_storing; i++) {
+            if(scanf("%d", &connection_capacity ) < 0)
+                  exit(-1);
+            network.setConnection(i,i+n_storing+1, connection_capacity);
+        }
+
+        for (i=0; i<n_connections; i++) {
+            if(scanf("%d %d %d", &sourceV, &destinV, &connection_capacity ) < 0)
+                  exit(-1);
+            network.setConnection(sourceV,destinV, connection_capacity);
+        }
 
         //free all the memory allocated to the network object
         //network.freeNetwork();
