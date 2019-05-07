@@ -7,7 +7,7 @@ using namespace std;
 class Network
 {
     int num_vertex, num_suppliers;
-    list<Vertex> vertex_list;
+    list<Vertex>* vertex_list;
     list<Edge> edge_list;
 
 public:
@@ -15,11 +15,36 @@ public:
     void addEdge(Edge edge);
     void addVertex(Vertex vertex);
     void freeNetwork();
+
+
+    Network::Network(int numSuppliers, int numStoring, int numConnections)  {
+        int i;
+        this->num_vertex = numSuppliers + numStoring + 2;
+        this->num_suppliers = numSuppliers;
+    }
+
+    void Network::addEdge(Edge edge) {
+        edge_list.push_front(edge);
+    }
+    void Network::addVertex(Vertex vertex){
+        vertex_list[vertex.getId()].push_front(vertex);
+    }
 };
 
 class Vertex
 {
-    int overflow, height;
+    int id, overflow, height;
+
+    public:
+        Vertex();
+        int getId(Vertex vertex);
+    
+    Vertex vertex (){
+        id, height = 0;
+    }
+    int getId(){
+        return id;
+    }
 };
 
 class Edge 
@@ -28,17 +53,6 @@ class Edge
     int origin, destination;
 };
 
-Network::Network(int numSuppliers, int numStoring, int numConnections)  {
-    int i;
-    this->num_vertex = numSuppliers + numStoring + 2;
-    this->num_suppliers = numSuppliers;
-    vertex_list = new list<Vertex>[numSuppliers + numStoring + 2 + 2*numStoring];
-    edge_list = new list<Edge>[numConnections + numStoring];
-}
-
-void Network::addEdge(Edge edge) {
-    edge_list.push_front(edge);
-}
 
 
 int main() {
