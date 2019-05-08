@@ -1,17 +1,17 @@
-#include <iostream>
-#include <vector>
-#include <list>
-#include <stack>
-#include <algorithm>
-using namespace std;
+#include <stdio.h>
+#include<stdlib.h>
 
-
-struct Edge
+/************** Structures **************/
+typedef struct Edge
 {
     int flow, capacity;
     // start vertex as u and end vertex as v.
     int u, v;
+}*edge
 
+typedef struct Net{
+
+}*Network
     Edge(int current_flow, int capacity, int u, int v)
     {
         this->flow = flow;
@@ -22,53 +22,16 @@ struct Edge
 };
 
 // Represent a Vertex
-struct Vertex
+typedef struct Vertex
 {
-    int id;
-    vector<Edge> adjList;
-
+    int height, id;
+}*vertex
     Vertex(int id)
     {
         this->id = id;
+        this->height = 0;
     }
 };
-
-class Network
-{
-    int num_vertex, num_suppliers;
-    vector<Vertex> vertex_list;
-    vector<int> excessList, heightsList;
-
-public:
-    Network(int numSuppliers, int numStoring, int numConnections);   // Network Constructor
-    void setConnection( int capacity, int u, int v);
-    void freeNetwork();
-    void relabel(int u);
-    bool push(int u);
-    void preflowInitializer(int id);
-};
-    Network::Network(int numSuppliers, int numStoring, int numConnections)  {
-        int i;
-        this->num_vertex = numSuppliers + 2*numStoring + 2;
-        this->num_suppliers = numSuppliers;
-        for (i=0; i<this->num_vertex; i++) {
-            this->excessList.push_back(0);
-            this->heightsList.push_back(0);
-        }
-        for (i=0; i< this->num_vertex; i++) {
-            vertex_list.push_back(Vertex(i));
-        }
-    }
-
-    void Network::setConnection(int capacity, int u, int v) {
-        Edge connection = Edge(0, capacity,u,v);
-        vertex_list[u].adjList.push_back(connection);
-    }
-
-    void Network::relabel() {
-        
-    }
-
 
 
 
