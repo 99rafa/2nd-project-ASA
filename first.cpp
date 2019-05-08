@@ -34,7 +34,7 @@ struct Vertex
 
 class Network
 {
-    int num_vertex, num_suppliers, num_edges;
+    int num_vertex, num_suppliers, num_edges, num_storing;
     vector<Vertex> vertex_list;
     vector<Edge> edge_list;
     vector<int> excessList, heightsList;
@@ -42,6 +42,9 @@ class Network
 public:
     Network(int numSuppliers, int numStoring, int numConnections);   // Network Constructor
     void setConnection( int u, int v, int capacity);
+    bool isSupplier(int i);
+    bool isStorer(int i);
+    bool isInMinimumCut(int i);
     void freeNetwork();
     void relabel(int u);
     bool push(int u);
@@ -49,12 +52,14 @@ public:
     int getMaxFlow(int s);
     void updateTranspostEdgeFlow(int i, int flow);
     int vertexOverflow();
+    void findCriticalStorage();
     void print();
 };
     Network::Network(int numSuppliers, int numStoring, int numConnections)  {
         int i;
         this->num_vertex = numSuppliers + 2*numStoring + 2;
         this->num_suppliers = numSuppliers;
+        this->num_storing = numStoring;
         this->num_edges = numConnections + numStoring + numSuppliers;
 
         for (i=0; i<this->num_vertex; i++) {
@@ -67,6 +72,26 @@ public:
         Edge connection = Edge(0, capacity,u,v);
         edge_list.push_back(connection);
     }
+
+
+    bool Network::isSupplier(int i){
+        return i > 1 && i <= num_suppliers;
+    }
+
+    bool Network::isStorer(int i){
+        return i > num_suppliers + 1;
+    }
+
+    bool Network::isInMinimumCut(int i){
+        int offset = num_storing;
+        int last_storing = num_suppliers + num_storing + 1;
+        if(isStorer(i))
+            return heightsList[i] < num_vertex && i+offset<= last_storing+offset;
+        else
+            return heightsList[i] < num_vertex;
+    }
+
+
 
     void Network::preflowInitializer(int source)
 {
@@ -168,7 +193,7 @@ return false;
     void Network::relabel(int u)
 {
     // Initialize minimum height of an adjacent
-    int minHeight = 2* this->num_vertex;
+    double minHeight = 2* this->num_vertex;
 
 
     for (int i = 0; (unsigned) i < edge_list.size(); i++)
@@ -190,6 +215,57 @@ return false;
             }
         }
     }
+}
+
+
+void Network::findCriticalStorage(){
+    int i, j;
+    vector<int> critical_stores;
+    vector<vector<int>> to_upgrade;
+
+    int offset = num_storing; 
+
+    for(i = 2; i < num_vertex; i++)
+    {   
+        if(isInMinimumCut(i)){
+            if(heightsList[i+offset] >= num_vertex && !isSupplier(i))
+                critical_stores.push_back(i);
+        }
+    }
+
+    for(i = 1; i < num_vertex; i++){
+        if(isInMinimumCut(i)){
+            for(j = 0; (unsigned) j < edge_list.size()&& i == edge_list[j].destination; j++){
+                if (isStorer(i)) {
+                    if(edge_list[j].destination - edge_list[j].origin == offset)
+                    continue;
+                }
+                if(!isInMinimumCut(edge_list[j].origin) && edge_list[j].origin){  
+                    vector<int> pair = {edge_list[j].origin, i};
+                    to_upgrade.push_back(pair);
+                }
+            }
+        }
+    }
+
+    sort(critical_stores.begin(), critical_stores.end());    
+
+    for(i= 0; (unsigned) i < critical_stores.size(); i++)
+    {
+        printf("%d ", critical_stores[i]);
+    }
+
+    printf("\n");
+
+    for(i=0; (unsigned) i < to_upgrade.size(); i++){
+        printf("%d %d\n", to_upgrade[i][0], to_upgrade[i][1]);
+    }
+
+    
+
+
+
+    
 }
 
 void Network::print() {
@@ -250,8 +326,10 @@ int main() {
             network.setConnection(destinV,sourceV, connection_capacity);
 
         }
-        network.print();
-        printf("\n%d\n",network.getMaxFlow(1));
+        //network.print();
+        
+        printf("%d\n",network.getMaxFlow(1));
+        network.findCriticalStorage();
 
         //free all the memory allocated to the network object
         //network.freeNetwork();
