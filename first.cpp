@@ -12,19 +12,30 @@ struct Edge
     // start vertex as u and end vertex as v.
     int origin, destination;
 
-    Edge(int current_flow, int capacity, int u, int v)
+    Edge(int current_flow, int capacity, int origin, int destination)
     {
         this->flow = current_flow;
         this->capacity = capacity;
-        this->origin = u;
-        this->destination = v;
+        this->origin = origin;
+        this->destination = destination;
     }
 };
 
+// Represent a Vertex
+struct Vertex
+{
+    int id;
+
+    Vertex(int id)
+    {
+        this->id = id;
+    }
+};
 
 class Network
 {
-    int num_vertex, num_suppliers, num_connections;
+    int num_vertex, num_suppliers, num_edges;
+    vector<Vertex> vertex_list;
     vector<Edge> edge_list;
     vector<int> excessList, heightsList;
 
@@ -44,7 +55,8 @@ public:
         int i;
         this->num_vertex = numSuppliers + 2*numStoring + 2;
         this->num_suppliers = numSuppliers;
-        this->num_connections = numConnections +numStoring + numSuppliers;
+        this->num_edges = numConnections + numStoring + numSuppliers;
+
         for (i=0; i<this->num_vertex; i++) {
             this->excessList.push_back(0);
             this->heightsList.push_back(0);
@@ -182,7 +194,7 @@ return false;
 
 void Network::print() {
     int i;
-    for (i=0; i< this->num_connections; i++) {
+    for (i=0; i< this->num_edges; i++) {
         printf("%d-%d\n", this->edge_list[i].origin, this->edge_list[i].destination);
     }
 }
