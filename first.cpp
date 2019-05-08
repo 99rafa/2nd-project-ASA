@@ -21,21 +21,10 @@ struct Edge
     }
 };
 
-// Represent a Vertex
-struct Vertex
-{
-    int id;
-
-    Vertex(int id)
-    {
-        this->id = id;
-    }
-};
 
 class Network
 {
     int num_vertex, num_suppliers, num_edges;
-    vector<Vertex> vertex_list;
     vector<Edge> edge_list;
     vector<int> excessList, heightsList;
 
@@ -215,6 +204,8 @@ int Network::getMaxFlow(int s)
     // e_flow will be final maximum flow
     return excessList[0];
 }
+
+void Network::findCriticalStoring()
 
 
 int main() {
