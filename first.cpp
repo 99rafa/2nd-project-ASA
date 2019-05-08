@@ -10,13 +10,13 @@ struct Edge
 {
     int flow, capacity;
     // start vertex as u and end vertex as v.
-    int source, destination;
+    int origin, destination;
 
-    Edge(int current_flow, int capacity, int source, int destination)
+    Edge(int current_flow, int capacity, int origin, int destination)
     {
         this->flow = flow;
         this->capacity = capacity;
-        this->source = source;
+        this->origin = origin;
         this->destination = destination;
     }
 };
@@ -64,8 +64,8 @@ public:
         }
     }
 
-    void Network::setConnection(int capacity, int source, int destination) {
-        Edge connection = Edge(0, capacity, source, destination);
+    void Network::setConnection(int capacity, int origin, int destination) {
+        Edge connection = Edge(0, capacity, origin, destination);
         edge_list.push_back(connection);
     }
 
@@ -78,7 +78,7 @@ public:
         
         for(i = 0; i < num_edges; i++)
         {
-            printf("%d - %d\n", edge_list[i].source, edge_list[i].destination);
+            printf("%d - %d\n", edge_list[i].origin, edge_list[i].destination);
         }
     }
 
@@ -101,7 +101,7 @@ int main() {
     for (i=2; i< n_suppliers + 2; i++) {
         if(scanf("%d", &connection_capacity ) < 0)
                 exit(-1);
-        network.setConnection(connection_capacity, i, 0); //destination is source
+        network.setConnection(connection_capacity, i, 0); //destination is origin
     }
     k = i;
     for (i = k; i < k + n_storing; i++) {
