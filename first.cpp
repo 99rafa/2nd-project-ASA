@@ -10,14 +10,14 @@ struct Edge
 {
     int flow, capacity;
     // start vertex as u and end vertex as v.
-    int u, v;
+    int source, destination;
 
-    Edge(int current_flow, int capacity, int u, int v)
+    Edge(int current_flow, int capacity, int source, int destination)
     {
         this->flow = flow;
         this->capacity = capacity;
-        this->u = u;
-        this->v = v;
+        this->source = source;
+        this->destination = destination;
     }
 };
 
@@ -25,7 +25,6 @@ struct Edge
 struct Vertex
 {
     int id;
-    vector<Edge> adjList;
 
     Vertex(int id)
     {
@@ -35,8 +34,9 @@ struct Vertex
 
 class Network
 {
-    int num_vertex, num_suppliers;
+    int num_vertex, num_suppliers, num_edges;
     vector<Vertex> vertex_list;
+    vector<Edge> edge_list;
     vector<int> excessList, heightsList;
 
 public:
@@ -46,31 +46,41 @@ public:
     void relabel(int u);
     bool push(int u);
     void preflowInitializer(int id);
+    void print();
 };
     Network::Network(int numSuppliers, int numStoring, int numConnections)  {
         int i;
         this->num_vertex = numSuppliers + 2*numStoring + 2;
         this->num_suppliers = numSuppliers;
+        this->num_edges = numConnections + numStoring + numSuppliers;
+
         for (i=0; i<this->num_vertex; i++) {
             this->excessList.push_back(0);
             this->heightsList.push_back(0);
         }
+        
         for (i=0; i< this->num_vertex; i++) {
             vertex_list.push_back(Vertex(i));
         }
     }
 
-    void Network::setConnection(int capacity, int u, int v) {
-        Edge connection = Edge(0, capacity,u,v);
-        vertex_list[u].adjList.push_back(connection);
+    void Network::setConnection(int capacity, int source, int destination) {
+        Edge connection = Edge(0, capacity, source, destination);
+        edge_list.push_back(connection);
     }
 
-    void Network::relabel() {
+    void Network::relabel(int u) {
         
     }
 
-
-
+    void Network::print(){
+        int i;
+        
+        for(i = 0; i < num_edges; i++)
+        {
+            printf("%d - %d\n", edge_list[i].source, edge_list[i].destination);
+        }
+    }
 
 int main() {
     int n_suppliers,n_storing, n_connections,
@@ -85,24 +95,28 @@ int main() {
 
     Network network(n_suppliers, n_storing, n_connections);
 
-        for (i=2; i< n_suppliers + 2; i++) {
-            if(scanf("%d", &connection_capacity ) < 0)
-                  exit(-1);
-            network.setConnection(0,i, connection_capacity);
-        }
-        k = i;
-        for (i=k; i < k+ n_storing; i++) {
-            if(scanf("%d", &connection_capacity ) < 0)
-                  exit(-1);
-            network.setConnection(i,i+n_storing+1, connection_capacity);
-        }
+    int offset = n_storing;
+    
+    //import transposed graph
+    for (i=2; i< n_suppliers + 2; i++) {
+        if(scanf("%d", &connection_capacity ) < 0)
+                exit(-1);
+        network.setConnection(connection_capacity, i, 0); //destination is source
+    }
+    k = i;
+    for (i = k; i < k + n_storing; i++) {
+        if(scanf("%d", &connection_capacity ) < 0)
+                exit(-1);
+        network.setConnection(connection_capacity, i + offset, i); //offset of imaginary storing stations
+    }
 
-        for (i=0; i<n_connections; i++) {
-            if(scanf("%d %d %d", &sourceV, &destinV, &connection_capacity ) < 0)
-                  exit(-1);
-            network.setConnection(sourceV,destinV, connection_capacity);
-        }
+    for (i = 0; i < n_connections; i++) {
+        if(scanf("%d %d %d", &sourceV, &destinV, &connection_capacity ) < 0)
+                exit(-1);
+        network.setConnection(connection_capacity, destinV, sourceV);
+    }
 
+    network.print();
         //free all the memory allocated to the network object
         //network.freeNetwork();
         return 0;
