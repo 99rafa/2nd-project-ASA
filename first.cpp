@@ -201,7 +201,7 @@ int Network::getMaxFlow(int s)
 
     // ver.back() returns last Vertex, whose
     // e_flow will be final maximum flow
-    return excessList[1];
+    return excessList[0];
 }
 
 
@@ -221,24 +221,25 @@ int main() {
         for (i=2; i< n_suppliers + 2; i++) {
             if(scanf("%d", &connection_capacity ) < 0)
                   exit(-1);
-            network.setConnection(0,i, connection_capacity);
+            network.setConnection(i,0, connection_capacity);
         }
         k = i;
         offset=n_storing;
         for (i=k; i < k+ n_storing; i++) {
             if(scanf("%d", &connection_capacity ) < 0)
                   exit(-1);
-            network.setConnection(i,i+offset, connection_capacity);
+            network.setConnection(i+offset,i, connection_capacity);
         }
 
         for (i=0; i<n_connections; i++) {
             if(scanf("%d %d %d", &sourceV, &destinV, &connection_capacity ) < 0)
                   exit(-1);
             if (sourceV > 1 + n_suppliers) sourceV = sourceV + offset;
-            network.setConnection(sourceV,destinV, connection_capacity);
+            network.setConnection(destinV,sourceV, connection_capacity);
 
         }
-        printf("%d\n",network.getMaxFlow(0));
+        network.print();
+        printf("\n%d\n",network.getMaxFlow(1));
 
         //free all the memory allocated to the network object
         //network.freeNetwork();
