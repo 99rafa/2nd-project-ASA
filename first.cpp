@@ -34,7 +34,7 @@ public:
     void freeNetwork();
     void relabel(int u);
     bool push(int u);
-    void preflowInitializer(int id);
+    void preflowInitializer(int source);
     int getMaxFlow(int s);
     void updateTranspostEdgeFlow(int i, int flow);
     int vertexOverflow();
@@ -134,7 +134,6 @@ for (int i = 0; (unsigned) i < edge_list.size(); i++)
             // remaining flow on edge and excess flow.
             int flow = min(edge_list[i].capacity - edge_list[i].flow,
                            excessList[u]);
-
             // Reduce excess flow for overflowing vertex
             excessList[u] -= flow;
 
@@ -190,6 +189,7 @@ void Network::print() {
 
 int Network::getMaxFlow(int s)
 {
+
     preflowInitializer(s);
     // loop untill none of the Vertex is in overflow
     while (vertexOverflow() != -1)
@@ -198,6 +198,7 @@ int Network::getMaxFlow(int s)
         if (!push(u))
             relabel(u);
     }
+
     // ver.back() returns last Vertex, whose
     // e_flow will be final maximum flow
     return excessList[1];
@@ -205,7 +206,7 @@ int Network::getMaxFlow(int s)
 
 
 int main() {
-    int n_suppliers,n_storing, n_connections,
+    int n_suppliers,n_storing, n_connections,offset,
     connection_capacity, sourceV,destinV,i,k;
 
     if(scanf("%d",&n_suppliers) < 0)
@@ -223,16 +224,19 @@ int main() {
             network.setConnection(0,i, connection_capacity);
         }
         k = i;
+        offset=n_storing;
         for (i=k; i < k+ n_storing; i++) {
             if(scanf("%d", &connection_capacity ) < 0)
                   exit(-1);
-            network.setConnection(i,i+n_storing, connection_capacity);
+            network.setConnection(i,i+offset, connection_capacity);
         }
 
         for (i=0; i<n_connections; i++) {
             if(scanf("%d %d %d", &sourceV, &destinV, &connection_capacity ) < 0)
                   exit(-1);
+            if (sourceV > 1 + n_suppliers) sourceV = sourceV + offset;
             network.setConnection(sourceV,destinV, connection_capacity);
+
         }
         printf("%d\n",network.getMaxFlow(0));
 
