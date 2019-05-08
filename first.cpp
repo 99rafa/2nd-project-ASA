@@ -14,7 +14,7 @@ struct Edge
 
     Edge(int current_flow, int capacity, int origin, int destination)
     {
-        this->flow = flow;
+        this->flow = current_flow;
         this->capacity = capacity;
         this->origin = origin;
         this->destination = destination;
@@ -41,12 +41,15 @@ class Network
 
 public:
     Network(int numSuppliers, int numStoring, int numConnections);   // Network Constructor
-    void setConnection( int capacity, int u, int v);
+    void setConnection( int u, int v, int capacity);
     void freeNetwork();
     void relabel(int u);
     bool push(int u);
     void preflowInitializer(int id);
     void print();
+    int vertexOverflow();
+    void updateTranspostEdgeFlow(int i, int flow);
+    int getMaxFlow(int s);
 };
     Network::Network(int numSuppliers, int numStoring, int numConnections)  {
         int i;
@@ -58,29 +61,160 @@ public:
             this->excessList.push_back(0);
             this->heightsList.push_back(0);
         }
-        
-        for (i=0; i< this->num_vertex; i++) {
-            vertex_list.push_back(Vertex(i));
-        }
     }
 
-    void Network::setConnection(int capacity, int origin, int destination) {
-        Edge connection = Edge(0, capacity, origin, destination);
+    void Network::setConnection( int u, int v, int capacity) {
+        Edge connection = Edge(0, capacity,u,v);
         edge_list.push_back(connection);
     }
 
-    void Network::relabel(int u) {
-        
-    }
+    void Network::preflowInitializer(int source)
+{
+    // Making h of source Vertex equal to no. of vertices
+    // Height of other vertices is 0.
+    heightsList[source] = num_vertex;
 
-    void Network::print(){
-        int i;
-        
-        for(i = 0; i < num_edges; i++)
+    //
+    for (int i = 0; (unsigned) i < edge_list.size(); i++)
+    {
+        // If current edge goes from source
+        if (edge_list[i].origin == source)
         {
-            printf("%d - %d\n", edge_list[i].origin, edge_list[i].destination);
+            // Flow is equal to capacity
+            edge_list[i].flow = edge_list[i].capacity;
+
+            // Initialize excess flow for adjacent v
+            excessList[edge_list[i].destination] += edge_list[i].flow;
+
+            // Add an edge from v to s in residual graph with
+            // capacity equal to 0
+            edge_list.push_back(Edge(-edge_list[i].flow, 0, edge_list[i].destination, source));
         }
     }
+}
+
+int Network::vertexOverflow()
+{
+
+    for (int i = 2; i < num_vertex ; i++)
+       if (excessList[i] > 0)
+            return i;
+
+    // -1 if no overflowing Vertex
+    return -1;
+}
+
+// Update reverse flow for flow added on ith Edge
+void Network::updateTranspostEdgeFlow(int i, int flow)
+{
+    int u = edge_list[i].destination, v = edge_list[i].origin;
+
+    for (int j = 0; (unsigned) j < edge_list.size(); j++)
+    {
+        if (edge_list[j].destination == v && edge_list[j].origin == u)
+        {
+            edge_list[j].flow -= flow;
+            return;
+        }
+    }
+
+    // adding reverse Edge in residual graph
+    Edge e = Edge(0, flow, u, v);
+    edge_list.push_back(e);
+}
+
+bool Network::push(int u)
+{
+// Traverse through all edges to find an adjacent (of u)
+// to which flow can be pushed
+for (int i = 0; (unsigned) i < edge_list.size(); i++)
+{
+    // Checks u of current edge is same as given
+    // overflowing vertex
+    if (edge_list[i].origin == u)
+    {
+        // if flow is equal to capacity then no push
+        // is possible
+        if (edge_list[i].flow == edge_list[i].capacity)
+            continue;
+
+        // Push is only possible if height of adjacent
+        // is smaller than height of overflowing vertex
+        if (heightsList[u] > heightsList[edge_list[i].destination])
+        {
+            // Flow to be pushed is equal to minimum of
+            // remaining flow on edge and excess flow.
+            int flow = min(edge_list[i].capacity - edge_list[i].flow,
+                           excessList[u]);
+
+            // Reduce excess flow for overflowing vertex
+            excessList[u] -= flow;
+
+            // Increase excess flow for adjacent
+            excessList[edge_list[i].destination] += flow;
+
+            // Add residual flow (With capacity 0 and negative
+            // flow)
+            edge_list[i].flow += flow;
+
+            updateTranspostEdgeFlow(i, flow);
+
+            return true;
+        }
+    }
+}
+return false;
+}
+
+    void Network::relabel(int u)
+{
+    // Initialize minimum height of an adjacent
+    int minHeight = 2* this->num_vertex;
+
+
+    for (int i = 0; (unsigned) i < edge_list.size(); i++)
+    {
+        if (edge_list[i].origin == u)
+        {
+            // if flow is equal to capacity then no
+            // relabeling
+            if (edge_list[i].flow == edge_list[i].capacity)
+                continue;
+
+            // Update minimum height
+            if (heightsList[edge_list[i].destination] < minHeight)
+            {
+                minHeight = heightsList[edge_list[i].destination];
+
+                // updating height of u
+                heightsList[u] = minHeight + 1;
+            }
+        }
+    }
+}
+
+void Network::print() {
+    int i;
+    for (i=0; i< this->num_edges; i++) {
+        printf("%d-%d\n", this->edge_list[i].origin, this->edge_list[i].destination);
+    }
+}
+
+int Network::getMaxFlow(int s)
+{
+    preflowInitializer(s);
+    // loop untill none of the Vertex is in overflow
+    while (vertexOverflow() != -1)
+    {
+        int u = vertexOverflow();
+        if (!push(u))
+            relabel(u);
+    }
+    // ver.back() returns last Vertex, whose
+    // e_flow will be final maximum flow
+    return excessList[1];
+}
+
 
 int main() {
     int n_suppliers,n_storing, n_connections,
@@ -116,7 +250,8 @@ int main() {
         network.setConnection(connection_capacity, destinV, sourceV);
     }
 
-    network.print();
+    printf("%d\n",network.getMaxFlow(0));
+
         //free all the memory allocated to the network object
         //network.freeNetwork();
         return 0;
