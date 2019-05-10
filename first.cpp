@@ -59,8 +59,9 @@ public:
     }
 
     void Network::freeNetwork() {
-        edge_list.clear();
-        edge_list.shrink_to_fit();
+        for (int i=0; i < this->num_vertex; i++)
+            (this->edge_list[i]).clear();
+        delete [] this->edge_list;
         excessList.clear();
         excessList.shrink_to_fit();
         heightsList.clear();
@@ -82,7 +83,7 @@ public:
     }
 
     bool Network::isOriginalStorer(int i){
-        return i<2+num_suppliers+num_storing;
+        return i<2+num_suppliers+num_storing && i > 1+num_suppliers;
     }
 
     bool Network::imagMinimum(int i) {
@@ -222,7 +223,7 @@ return false;
         int Network::getMaxFlow(int s, int t){
             preflowInitializer(s);
             // loop untill none of the Vertex is in overflow
-            find_max_height_vertices();
+            initializeQueue();
             while (!(activeQueue.empty()))
             {
                     int i=activeQueue.front();
@@ -240,7 +241,7 @@ return false;
 
 
 void Network::findCriticalStorage(){
-    int i, fixedStation;
+    int i, fixedSource, fixedDestination;
     vector<int> critical_stores;
     vector<pair<int,int>> to_upgrade;
 
@@ -248,7 +249,7 @@ void Network::findCriticalStorage(){
     for(i = 2; i < num_vertex; i++)
     {
         if(!isInMinimumCut(i)){
-            if( isOriginalStorer(i) && heightsList[i+offset] >= num_vertex && !isSupplier(i) )
+            if( isOriginalStorer(i) && heightsList[i+offset] >= num_vertex )
                 critical_stores.push_back(i);
         }
     }
@@ -256,16 +257,18 @@ void Network::findCriticalStorage(){
     for(i = 1; i < num_vertex; i++){
         if(isInMinimumCut(i)){
             list<Edge>::iterator r;
-            for (r = edge_list[i].begin(); r != edge_list[i].end(); ++r)  {
+            for (r = edge_list[i].begin(); r != edge_list[i].end(); r++)  {
                 if ( r->destination != 0) {
                     if (isStorer(i) && isStorer(r->destination)) {
                         if(i - r->destination == offset)
                         continue;
                     }
                     if(!isInMinimumCut(r->destination) && !imagMinimum(r->destination)){
-                        fixedStation = r->destination;
-                        if (r->destination > 1+num_storing+num_suppliers) fixedStation -= offset;
-                        to_upgrade.push_back(make_pair(fixedStation, i));
+                        fixedSource = r->destination;
+                        fixedDestination = i;
+                        if (r->destination > 1+num_storing+num_suppliers) fixedSource -= offset;
+                        if ( i > 1+num_storing+num_suppliers) fixedDestination -=offset;
+                        to_upgrade.push_back(make_pair(fixedSource, fixedDestination));
                     }
                 }
             }
