@@ -10,7 +10,6 @@ queue<int> activeQueue;
 struct Edge
 {
     int flow, capacity;
-    // start vertex as u and end vertex as v.
     int origin, destination;
 
     Edge(int current_flow, int capacity, int destination)
@@ -38,7 +37,7 @@ public:
     bool imagMinimum(int i);
     void freeNetwork();
     void relabel(int u);
-    bool push(int u);
+    bool discharge(int u);
     void preflowInitializer(int source);
     int getMaxFlow(int s, int t);
     void updateTranspostEdgeFlow(int origin,int destination, int flow);
@@ -51,7 +50,7 @@ public:
         this->num_suppliers = numSuppliers;
         this->num_storing = numStoring;
         this->num_edges = numConnections + numStoring + numSuppliers;
-        edge_list = new list<Edge>[num_vertex];
+        this->edge_list = new list<Edge>[num_vertex];
         for (i=0; i<this->num_vertex; i++) {
             this->excessList.push_back(0);
             this->heightsList.push_back(0);
@@ -62,232 +61,211 @@ public:
         for (int i=0; i < this->num_vertex; i++)
             (this->edge_list[i]).clear();
         delete [] this->edge_list;
-        excessList.clear();
-        excessList.shrink_to_fit();
-        heightsList.clear();
-        heightsList.shrink_to_fit();
+        this->excessList.clear();
+        this->excessList.shrink_to_fit();
+        this->heightsList.clear();
+        this->heightsList.shrink_to_fit();
     }
 
     void Network::setConnection( int u, int v, int capacity) {
         Edge connection = Edge(0, capacity,v);
-        edge_list[u].push_back(connection);
+        this->edge_list[u].push_back(connection);
     }
 
 
     bool Network::isSupplier(int i){
-        return i > 1 && i <= num_suppliers;
+        return i > 1 && i <= this->num_suppliers;
     }
 
     bool Network::isStorer(int i){
-        return i > num_suppliers + 1;
+        return i > this->num_suppliers + 1;
     }
 
     bool Network::isOriginalStorer(int i){
-        return i<2+num_suppliers+num_storing && i > 1+num_suppliers;
+        return i < 2 + this->num_suppliers + this->num_storing && i > 1 + this->num_suppliers;
     }
 
     bool Network::imagMinimum(int i) {
-        int last_storing = num_suppliers + num_storing + 1;
+        int last_storing = this->num_suppliers + this->num_storing + 1;
         if(isStorer(i)){
-            return heightsList[i] >= num_vertex && i > last_storing;
+            return this->heightsList[i] >= this->num_vertex && i > last_storing;
         }
         else
-            return heightsList[i] >= num_vertex;
+            return this->heightsList[i] >= this->num_vertex;
     }
 
-    bool Network::isInMinimumCut(int i){
-        int offset = num_storing;
-        int last_storing = num_suppliers + num_storing + 1;
+    bool Network::isInMinimumCut(int i) {
+        int offset = this->num_storing;
+        int last_storing = this->num_suppliers + this->num_storing + 1;
         if(isStorer(i)){
-            return heightsList[i] >= num_vertex && i+offset<= last_storing+offset;
+            return this->heightsList[i] >= this->num_vertex && i + offset <= last_storing + offset;
         }
         else
-            return heightsList[i] >= num_vertex;
+            return this->heightsList[i] >= this->num_vertex;
     }
 
 
 
     void Network::preflowInitializer(int source)
-{
-    // Making h of source Vertex equal to no. of vertices
-    // Height of other vertices is 0.
-    heightsList[source] = num_vertex;
+    {
 
-    list<Edge>::iterator r;
-    for (r = edge_list[source].begin(); r != edge_list[source].end(); ++r)  {
-        // If current edge goes from source
-
-            // Flow is equal to capacity
-            r->flow = r->capacity;
-
-            // Initialize excess flow for adjacent v
-            excessList[r->destination] += r->flow;
-
-            // Add an edge from v to s in residual graph with
-            // capacity equal to 0
-            edge_list[r->destination].push_back(Edge(-r->flow, 0, source));
-        }
-}
-
-// Update reverse flow for flow added on ith Edge
-void Network::updateTranspostEdgeFlow(int origin,int destination, int flow)
-{
-    int u = destination, v = origin;
+        this->heightsList[source] = this->num_vertex;
 
         list<Edge>::iterator r;
-        for (r = edge_list[u].begin(); r != edge_list[u].end(); ++r)  {
+        for (r = this->edge_list[source].begin(); r != this->edge_list[source].end(); ++r)  {
 
-        if (r->destination == v )
-        {
-            r->flow -= flow;
-            return;
+            r->flow = r->capacity;
+
+            this->excessList[r->destination] += r->flow;
+
+            this->edge_list[r->destination].push_back(Edge(-r->flow, 0, source));
         }
     }
 
-    // adding reverse Edge in residual graph
-    Edge e = Edge(0, flow, v);
-    edge_list[u].push_back(e);
-}
+    // Update reverse flow for flow added on ith Edge
+    void Network::updateTranspostEdgeFlow(int origin, int destination, int flow)
+    {
+        int u = destination, v = origin;
 
-bool Network::push(int u)
-{
-// Traverse through all edges to find an adjacent (of u)
-// to which flow can be pushed
-list<Edge>::iterator r;
-for (r = edge_list[u].begin(); r != edge_list[u].end(); ++r)
+            list<Edge>::iterator r;
+            for (r = this->edge_list[u].begin(); r != this->edge_list[u].end(); ++r)  {
 
-{
-    // Checks u of current edge is same as given
-    // overflowing vertex
-        // if flow is equal to capacity then no push
-        // is possible
-        if (r->flow == r->capacity)
-            continue;
-
-        // Push is only possible if height of adjacent
-        // is smaller than height of overflowing vertex
-        if (heightsList[u] > heightsList[r->destination])
-        {
-            // Flow to be pushed is equal to minimum of
-            // remaining flow on edge and excess flow.
-            int flow = min(r->capacity - r->flow,
-                           excessList[u]);
-            // Reduce excess flow for overflowing vertex
-            excessList[u] -= flow;
-            if(excessList[u] == 0) activeQueue.pop();
-            // Increase excess flow for adjacent
-            if(excessList[r->destination]==0 && r->destination != 0 && r->destination !=1) activeQueue.push(r->destination);
-            excessList[r->destination] += flow;
-            // Add residual flow (With capacity 0 and negative
-            // flow)
-            r->flow += flow;
-            updateTranspostEdgeFlow(u,r->destination, flow);
-
-            return true;
+            if (r->destination == v )
+            {
+                r->flow -= flow;
+                return;
+            }
         }
-}
-return false;
-}
+        // adding reverse Edge in residual graph
+        Edge e = Edge(0, flow, v);
+        this->edge_list[u].push_back(e);
+    }
 
-    void Network::relabel(int u)
-{
-    // Initialize minimum height of an adjacent
-    double minHeight = 2* this->num_vertex;
+    bool Network::discharge(int u)
+    {
 
-    list<Edge>::iterator r;
-    for (r = edge_list[u].begin(); r != edge_list[u].end(); ++r)  {
+        list<Edge>::iterator r;
+        for (r = this->edge_list[u].begin(); r != this->edge_list[u].end(); ++r)
 
-            // if flow is equal to capacity then no
-            // relabeling
+        {
+
             if (r->flow == r->capacity)
                 continue;
 
-            // Update minimum height
-            if (heightsList[r->destination] < minHeight)
-            {
-                minHeight = heightsList[r->destination];
 
-                // updating height of u
-                heightsList[u] = minHeight + 1;
+            if (this->heightsList[u] > this->heightsList[r->destination])
+            {
+
+                int flow = min(r->capacity - r->flow,
+                               this->excessList[u]);
+
+                this->excessList[u] -= flow;
+                if(this->excessList[u] == 0) activeQueue.pop();
+
+                if(this->excessList[r->destination]==0 && r->destination != 0 && r->destination !=1) activeQueue.push(r->destination);
+                this->excessList[r->destination] += flow;
+
+                r->flow += flow;
+                updateTranspostEdgeFlow(u,r->destination, flow);
+
+                return true;
             }
+        }
+        return false;
     }
-}
+
+    void Network::relabel(int u)
+    {
+        // Initialize minimum height of an adjacent
+        double minHeight = 2* this->num_vertex;
+
+        list<Edge>::iterator r;
+        for (r = this->edge_list[u].begin(); r != this->edge_list[u].end(); ++r)  {
+
+            if (r->flow == r->capacity)
+                continue;
+
+            if (this->heightsList[r->destination] < minHeight)
+            {
+                minHeight = this->heightsList[r->destination];
+
+                this->heightsList[u] = minHeight + 1;
+            }
+        }
+    }
 
     void Network::initializeQueue() {
-        for (int i = 2; i < num_vertex; i++) {
-        if ( excessList[i] > 0) {
+        for (int i = 2; i < this->num_vertex; i++) {
+        if ( this->excessList[i] > 0) {
             activeQueue.push(i);
         }
     }
 }
         int Network::getMaxFlow(int s, int t){
             preflowInitializer(s);
-            // loop untill none of the Vertex is in overflow
+
             initializeQueue();
             while (!(activeQueue.empty()))
             {
                     int i=activeQueue.front();
-                    if (!push(i)) {
+                    if (!discharge(i)) {
                         relabel(i);
                     }
 
             }
-            // ver->back() returns last Vertex, whose
-            // e_flow will be final maximum flow
-            return excessList[0];
+            return this->excessList[0];
         }
 
 
 
 
-void Network::findCriticalStorage(){
-    int i, fixedSource, fixedDestination;
-    vector<int> critical_stores;
-    vector<pair<int,int>> to_upgrade;
+    void Network::findCriticalStorage() {
+        int i, fixedSource, fixedDestination;
+        vector<int> critical_stores;
+        vector<pair<int,int>> to_upgrade;
 
-    int offset = num_storing;
-    for(i = 2; i < num_vertex; i++)
-    {
-        if(!isInMinimumCut(i)){
-            if( isOriginalStorer(i) && heightsList[i+offset] >= num_vertex )
-                critical_stores.push_back(i);
+        int offset = this->num_storing;
+        for(i = 2; i < this->num_vertex; i++)
+        {
+            if(!isInMinimumCut(i)){
+                if( isOriginalStorer(i) && this->heightsList[i+offset] >= this->num_vertex )
+                    critical_stores.push_back(i);
+            }
         }
-    }
 
-    for(i = 1; i < num_vertex; i++){
-        if(isInMinimumCut(i)){
-            list<Edge>::iterator r;
-            for (r = edge_list[i].begin(); r != edge_list[i].end(); r++)  {
-                if ( r->destination != 0) {
-                    if (isStorer(i) && isStorer(r->destination)) {
-                        if(i - r->destination == offset)
-                        continue;
-                    }
-                    if(!isInMinimumCut(r->destination) && !imagMinimum(r->destination)){
-                        fixedSource = r->destination;
-                        fixedDestination = i;
-                        if (r->destination > 1+num_storing+num_suppliers) fixedSource -= offset;
-                        if ( i > 1+num_storing+num_suppliers) fixedDestination -=offset;
-                        to_upgrade.push_back(make_pair(fixedSource, fixedDestination));
+        for(i = 1; i < this->num_vertex; i++){
+            if(isInMinimumCut(i)){
+                list<Edge>::iterator r;
+                for (r = this->edge_list[i].begin(); r != this->edge_list[i].end(); r++)  {
+                    if ( r->destination != 0) {
+                        if (isStorer(i) && isStorer(r->destination)) {
+                            if(i - r->destination == offset)
+                            continue;
+                        }
+                        if(!isInMinimumCut(r->destination) && !imagMinimum(r->destination)){
+                            fixedSource = r->destination;
+                            fixedDestination = i;
+                            if (r->destination > 1 + this->num_storing + this->num_suppliers) fixedSource -= offset;
+                            if ( i > 1 + this->num_storing + this->num_suppliers) fixedDestination -=offset;
+                            to_upgrade.push_back(make_pair(fixedSource, fixedDestination));
+                        }
                     }
                 }
             }
         }
-    }
-    sort(critical_stores.begin(), critical_stores.end());
-    sort(to_upgrade.begin(),to_upgrade.end());
-    for(i = 0; (unsigned) i < critical_stores.size(); i++)
-    {
-        printf("%d", critical_stores[i]);
-        if ((unsigned) i != critical_stores.size()-1) printf(" ");
-    }
-    printf("\n");
+        sort(critical_stores.begin(), critical_stores.end());
+        sort(to_upgrade.begin(),to_upgrade.end());
+        for(i = 0; (unsigned) i < critical_stores.size(); i++)
+        {
+            printf("%d", critical_stores[i]);
+            if ((unsigned) i != critical_stores.size()-1) printf(" ");
+        }
+        printf("\n");
 
-    for(i=0; (unsigned) i < to_upgrade.size(); i++){
-        printf("%d %d\n", to_upgrade[i].first, to_upgrade[i].second);
+        for(i=0; (unsigned) i < to_upgrade.size(); i++){
+            printf("%d %d\n", to_upgrade[i].first, to_upgrade[i].second);
+        }
     }
-
-}
 
 
 
@@ -325,7 +303,6 @@ int main() {
             network.setConnection(destinV,sourceV, connection_capacity);
 
         }
-        //network.print();
 
         printf("%d\n",network.getMaxFlow(1,0));
         network.findCriticalStorage();
