@@ -1,10 +1,11 @@
 #include <iostream>
 #include <vector>
 #include <list>
-#include <stack>
+#include <queue>
 #include <algorithm>
 using namespace std;
 
+queue<int> activeQueue;
 
 struct Edge
 {
@@ -12,11 +13,10 @@ struct Edge
     // start vertex as u and end vertex as v.
     int origin, destination;
 
-    Edge(int current_flow, int capacity, int origin, int destination)
+    Edge(int current_flow, int capacity, int destination)
     {
         this->flow = current_flow;
         this->capacity = capacity;
-        this->origin = origin;
         this->destination = destination;
     }
 };
@@ -40,11 +40,10 @@ public:
     void relabel(int u);
     bool push(int u);
     void preflowInitializer(int source);
-    int getMaxFlow(int s);
+    int getMaxFlow(int s, int t);
     void updateTranspostEdgeFlow(int origin,int destination, int flow);
-    int vertexOverflow();
     void findCriticalStorage();
-    void print();
+    void initializeQueue();
 };
     Network::Network(int numSuppliers, int numStoring, int numConnections)  {
         int i;
@@ -60,16 +59,16 @@ public:
     }
 
     void Network::freeNetwork() {
-        // edge_list.clear();
-        // edge_list.shrink_to_fit();
-        // excessList.clear();
-        // excessList.shrink_to_fit();
-        // heightsList.clear();
-        // heightsList.shrink_to_fit();
+        edge_list.clear();
+        edge_list.shrink_to_fit();
+        excessList.clear();
+        excessList.shrink_to_fit();
+        heightsList.clear();
+        heightsList.shrink_to_fit();
     }
 
     void Network::setConnection( int u, int v, int capacity) {
-        Edge connection = Edge(0, capacity,u,v);
+        Edge connection = Edge(0, capacity,v);
         edge_list[u].push_back(connection);
     }
 
@@ -125,19 +124,8 @@ public:
 
             // Add an edge from v to s in residual graph with
             // capacity equal to 0
-            edge_list[r->destination].push_back(Edge(-r->flow, 0, r->destination, source));
+            edge_list[r->destination].push_back(Edge(-r->flow, 0, source));
         }
-}
-
-int Network::vertexOverflow()
-{
-
-    for (int i = 2; i < num_vertex ; i++)
-       if (excessList[i] > 0)
-            return i;
-
-    // -1 if no overflowing Vertex
-    return -1;
 }
 
 // Update reverse flow for flow added on ith Edge
@@ -148,7 +136,7 @@ void Network::updateTranspostEdgeFlow(int origin,int destination, int flow)
         list<Edge>::iterator r;
         for (r = edge_list[u].begin(); r != edge_list[u].end(); ++r)  {
 
-        if (r->destination == v && r->origin == u)
+        if (r->destination == v )
         {
             r->flow -= flow;
             return;
@@ -156,7 +144,7 @@ void Network::updateTranspostEdgeFlow(int origin,int destination, int flow)
     }
 
     // adding reverse Edge in residual graph
-    Edge e = Edge(0, flow, u, v);
+    Edge e = Edge(0, flow, v);
     edge_list[u].push_back(e);
 }
 
@@ -185,13 +173,14 @@ for (r = edge_list[u].begin(); r != edge_list[u].end(); ++r)
                            excessList[u]);
             // Reduce excess flow for overflowing vertex
             excessList[u] -= flow;
-
+            if(excessList[u] == 0) activeQueue.pop();
             // Increase excess flow for adjacent
+            if(excessList[r->destination]==0 && r->destination != 0 && r->destination !=1) activeQueue.push(r->destination);
             excessList[r->destination] += flow;
             // Add residual flow (With capacity 0 and negative
             // flow)
             r->flow += flow;
-            updateTranspostEdgeFlow(r->origin,r->destination, flow);
+            updateTranspostEdgeFlow(u,r->destination, flow);
 
             return true;
         }
@@ -222,26 +211,36 @@ return false;
             }
     }
 }
-        int Network::getMaxFlow(int s){
 
-        preflowInitializer(s);
-        // loop untill none of the Vertex is in overflow
-        while (vertexOverflow() != -1)
-        {
-            int u = vertexOverflow();
-            if (!push(u))
-                relabel(u);
+    void Network::initializeQueue() {
+        for (int i = 2; i < num_vertex; i++) {
+        if ( excessList[i] > 0) {
+            activeQueue.push(i);
         }
-        // ver->back() returns last Vertex, whose
-        // e_flow will be final maximum flow
-        return excessList[0];
     }
+}
+        int Network::getMaxFlow(int s, int t){
+            preflowInitializer(s);
+            // loop untill none of the Vertex is in overflow
+            find_max_height_vertices();
+            while (!(activeQueue.empty()))
+            {
+                    int i=activeQueue.front();
+                    if (!push(i)) {
+                        relabel(i);
+                    }
+
+            }
+            // ver->back() returns last Vertex, whose
+            // e_flow will be final maximum flow
+            return excessList[0];
+        }
 
 
 
 
 void Network::findCriticalStorage(){
-    int i, j, fixedStation;
+    int i, fixedStation;
     vector<int> critical_stores;
     vector<pair<int,int>> to_upgrade;
 
@@ -258,9 +257,9 @@ void Network::findCriticalStorage(){
         if(isInMinimumCut(i)){
             list<Edge>::iterator r;
             for (r = edge_list[i].begin(); r != edge_list[i].end(); ++r)  {
-                if (i == r->origin && r->destination != 0) {
-                    if (isStorer(r->origin) && isStorer(r->destination)) {
-                        if(r->origin - r->destination == offset)
+                if ( r->destination != 0) {
+                    if (isStorer(i) && isStorer(r->destination)) {
+                        if(i - r->destination == offset)
                         continue;
                     }
                     if(!isInMinimumCut(r->destination) && !imagMinimum(r->destination)){
@@ -287,12 +286,6 @@ void Network::findCriticalStorage(){
 
 }
 
-void Network::print() {
-    // int i;
-    // for (i=0; i< this->num_edges; i++) {
-    //     printf("%d-%d\n", this->edge_list[i].origin, this->edge_list[i].destination);
-    // }
-}
 
 
 
@@ -331,7 +324,7 @@ int main() {
         }
         //network.print();
 
-        printf("%d\n",network.getMaxFlow(1));
+        printf("%d\n",network.getMaxFlow(1,0));
         network.findCriticalStorage();
 
         //free all the memory allocated to the network object
